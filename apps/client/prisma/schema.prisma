@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  Id             String           @id @default(uuid())
+  userId         String?
+  profileId      String?
+  email          String
+  password       String?
+  profile        Profile?         @relation(fields: [profileId], references: [Id])
+  role           UserRole         @default(USER)
+  UserOnJunction UserOnJunction[]
+  submissions    Submission[]
+}
+
+model DailyProblems {
+  Id    String             @id @default(uuid())
+  Dates DailyProblemDate[]
+}
+
+model DailyProblemDate {
+  Id             String        @id @default(uuid())
+  dailyProblemId String
+  dailyproblem   DailyProblems @relation(fields: [dailyProblemId], references: [Id])
+  date           DateTime      @unique
+  problemId      String
+}
+
+model Profile {
+  Id           String      @id @default(uuid())
+  user         User[]
+  Name         String?
+  location     String?
+  summary      String?
+  Gender       GenderType  @default(MALE)
+  work         String?
+  education    String?
+  skills       String[]
+  socialLinkId String
+  socialLinks  SocialLinks @relation(fields: [socialLinkId], references: [Id])
+  points       String[]
+  avatar       String?
+}
+
+model SocialLinks {
+  Id       String    @id @default(uuid())
+  website  String?
+  github   String?
+  linkedin String?
+  twitter  String?
+  profile  Profile[]
+}
+
+model Question {
+  Id                  String             @id @default(cuid())
+  title               String
+  desc                String
+  difficulty          Difficulty
+  example             String[]
+  constraints         String[]
+  topics              String[]
+  companies           String[]
+  acceptancerate      String?
+  likes               Int                @default(0)
+  dislikes            Int                @default(0)
+  problemdiscussionId String?
+  discussion          ProblemDiscussion? @relation(fields: [problemdiscussionId], references: [Id])
+  Submissions         Submission[]
+  UserOnJunction      UserOnJunction[]
+  editorial           String?
+}
+
+model ProblemDiscussion {
+  Id           String       @id @default(uuid())
+  question     Question[]
+  discussionId String
+  discussion   Discussion[]
+}
+
+model Discussion {
+  Id                  String             @id @default(uuid())
+  query               String
+  upvotes             Int
+  downvotes           Int
+  replies             String[]
+  ProblemDiscussion   ProblemDiscussion? @relation(fields: [problemDiscussionId], references: [Id])
+  problemDiscussionId String?
+  type                DiscussionType     @default(QUESTION)
+}
+
+model UserOnJunction {
+  Id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [Id])
+  userId     String
+  question   Question @relation(fields: [questionId], references: [Id])
+  questionId String
+}
+
+model Submission {
+  Id                  String           @id @default(uuid())
+  userId              String
+  code                String
+  questionId          String
+  errorType           String?
+  user                User             @relation(fields: [userId], references: [Id])
+  question            Question         @relation(fields: [questionId], references: [Id])
+  status              SubmissionStatus @default(PENDING)
+  time                Int              @default(0)
+  message             String?
+  testCaseLength      Int?
+  acceptedtestCase    Int?
+  wrongTestCaseLength Int?
+  memoryUsed          Int              @default(0)
+  expectedInput       String[]
+  expectedOutput      String?
+  userOutput          String?
+  createdAt           DateTime         @default(now())
+}
+
+model TestCase {
+  Id           String   @id @default(uuid())
+  submissionId String
+  token        String   @unique
+  status       String
+  time         String?
+  memory       String?
+  Input        String[]
+  output       String?
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  TLE
+  WRONG_ANSWER
+  ERROR
+}
+
+enum DiscussionType {
+  FEEDBACK
+  QUESTION
+  TIP
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
